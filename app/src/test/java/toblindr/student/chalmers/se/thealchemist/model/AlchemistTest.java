@@ -22,7 +22,7 @@ public class AlchemistTest {
         initMap();
     }
     Table<String,String,String> table = initTable();
-    ItemsCollector collector = new ItemsCollector(initItems());
+    ItemsCollector collector = new ItemsCollector();
 
     private static void initMap(){
         Map<String,String> newMap = new HashMap<>();
@@ -75,7 +75,7 @@ public class AlchemistTest {
             }
         }
 
-        assertTrue((collector.getAllItems().size()-knownItems.size())*2==counter);
+
 
     }
 }

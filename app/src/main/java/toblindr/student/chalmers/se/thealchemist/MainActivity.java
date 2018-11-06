@@ -1,6 +1,8 @@
 package toblindr.student.chalmers.se.thealchemist;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.LinearLayout;
@@ -23,9 +25,7 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
     private Facade facade;
 
     public MainActivity() {
-        facade = new Facade(initReactions(),initItems());
-        this.itemLayout = findViewById(R.id.itemLayout);
-        initItemLayout();
+
 
     }
 
@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
 
     private Map<String, String> initItems() {
 
-        List<String> itemsInfo = readRawTextFile(this,R.raw.items);
+        List<String> itemsInfo = readRawTextFile(R.raw.items);
         Map<String,String> toReturn = new HashMap<>();
         for(String item:itemsInfo){
             String[] info = item.split(":");
@@ -48,11 +48,11 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
     }
 
     private Collection<String> initReactions() {
-        return readRawTextFile(this,R.raw.reactions);
+        return readRawTextFile(R.raw.reactions);
     }
-    public List<String> readRawTextFile(Context ctx, int resId)
-    {
-        InputStream inputStream = ctx.getResources().openRawResource(resId);
+    public List<String> readRawTextFile(int resId) {
+        Resources resources = getResources();
+        InputStream inputStream = resources.openRawResource(resId);
 
         InputStreamReader inputreader = new InputStreamReader(inputStream);
         BufferedReader buffreader = new BufferedReader(inputreader);
@@ -73,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        facade = new Facade(initReactions(),initItems());
+        this.itemLayout = findViewById(R.id.itemLayout);
+        initItemLayout();
     }
 
     @Override
