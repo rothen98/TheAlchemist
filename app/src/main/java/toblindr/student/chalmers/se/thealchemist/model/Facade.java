@@ -20,7 +20,7 @@ public class Facade {
     private Table<String, String, String> initTable(Collection<String> reactions) {
         Table<String,String,String> toReturn = HashBasedTable.create();
         for(String reaction:reactions){
-            String[] parts = reaction.split("/+|=");
+            String[] parts = reaction.split("[+=]");
             if(parts.length==3) {
                 toReturn.put(parts[0], parts[1], parts[2]);
             }

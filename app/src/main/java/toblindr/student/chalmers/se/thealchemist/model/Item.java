@@ -10,7 +10,7 @@ public class Item {
     }
 
 
-    String getName(){
+    public String getName(){
         return name;
     }
     public String getImagePath(){
