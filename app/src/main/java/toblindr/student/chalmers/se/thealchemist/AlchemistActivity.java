@@ -1,17 +1,18 @@
 package toblindr.student.chalmers.se.thealchemist;
 
-import android.app.Activity;
-import android.content.Context;
+
 import android.content.res.Resources;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.io.BufferedReader;
@@ -29,12 +30,13 @@ import toblindr.student.chalmers.se.thealchemist.model.Item;
 
 import static android.view.View.VISIBLE;
 
-public class MainActivity extends AppCompatActivity implements IItemParentController{
+public class AlchemistActivity extends AppCompatActivity implements IItemParentController, NewItemFragment.OnFragmentInteractionListener{
     private LinearLayout itemLayout;
     private ConstraintLayout reactionView;
     private Facade facade;
+    private FrameLayout frameLayout;
 
-    public MainActivity() {
+    public AlchemistActivity() {
 
 
     }
@@ -72,7 +74,9 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
 
         try {
             while (( line = buffreader.readLine()) != null) {
-                rows.add(line);
+                if(!line.isEmpty()) {
+                    rows.add(line);
+                }
             }
         } catch (IOException e) {
             return null;
@@ -83,54 +87,74 @@ public class MainActivity extends AppCompatActivity implements IItemParentContro
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_alchemist);
         facade = new Facade(initReactions(),initItems());
         this.itemLayout = findViewById(R.id.itemLayout);
         this.itemLayout.setOnDragListener(new ListDragListener());
         this.reactionView = findViewById(R.id.reaction_view);
+        this.frameLayout=findViewById(R.id.frameContainer);
         reactionView.setOnDragListener(new TableDragListener());
         initItemLayout();
     }
 
     @Override
-    public void reaction(ItemHolder item, ItemHolder itemTwo,float x,float y) {
+    public void reaction(ItemHolder item, float itemX, float itemY, ItemHolder itemTwo,float itemTwoX,float itemTwoY) {
         Collection<Item> knownItems = facade.getKnownItems();
         Item created = facade.tryReaction(item.getItem(),itemTwo.getItem());
         if(created != null){
-            if(item.canBeRemoved()){
-                ViewGroup owner = (ViewGroup) item.getParent();
-                owner.removeView(item);
-            }
-            if(itemTwo.canBeRemoved()){
-                ViewGroup owner = (ViewGroup) itemTwo.getParent();
-                owner.removeView(itemTwo);
-            }
-            if(!knownItems.contains(created)){
-                itemLayout.addView(new ListCompleteItemView(this,created.getName(),
-                        new ItemListView(this,created,this)));
-            }
-            ItemView newView = new ItemView(this,created,this);
-            newView.setX(x - (newView.getWidth() / 2));
-            newView.setY(y - (newView.getHeight() / 2));
-            reactionView.addView(newView);
-        }
-        else{
-
+            newItemDiscovered(created,item,itemX,itemY,itemTwo,knownItems);
+        } else{
             if(itemTwo.canBeRemoved()){
                 reactionView.removeView(itemTwo);
                 reactionView.addView(itemTwo);
-                itemTwo.setX(x);
-                itemTwo.setY(y);
+                itemTwo.setX(itemTwoX);
+                itemTwo.setY(itemTwoY);
                 itemTwo.setVisibility(VISIBLE);
                 shake(itemTwo);
             }else{
                 ItemView newView = new ItemView(this,itemTwo.getItem(),this);
                 reactionView.addView(newView);
-                newView.setX(x);
-                newView.setY(y);
+                newView.setX(itemTwoX);
+                newView.setY(itemTwoY);
                 shake(newView);
             }
         }
+    }
+
+    private void newItemDiscovered(Item created, ItemHolder item, float itemX,float itemY,
+                                   ItemHolder itemTwo, Collection<Item> knownItems) {
+        if(item.canBeRemoved()){
+            ViewGroup owner = (ViewGroup) item.getParent();
+            owner.removeView(item);
+        }
+        if(itemTwo.canBeRemoved()){
+            ViewGroup owner = (ViewGroup) itemTwo.getParent();
+            owner.removeView(itemTwo);
+        }
+        if(!knownItems.contains(created)){
+            openFragment(created);
+            itemLayout.addView(new ListCompleteItemView(this,created.getName(),
+                    new ItemListView(this,created,this)));
+        }
+        ItemView newView = new ItemView(this,created,this);
+        newView.setX(itemX - (newView.getWidth() / 2));
+        newView.setY(itemY - (newView.getHeight() / 2));
+        reactionView.addView(newView);
+    }
+
+    private void openFragment(Item newItem) {
+        NewItemFragment newItemFragment = NewItemFragment.newInstance(newItem.getName(),newItem.getImagePath());
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.setCustomAnimations(R.anim.enter_from_right,R.anim.exit_from_right,R.anim.enter_from_right,R.anim.exit_from_right);
+        transaction.addToBackStack(null);
+        transaction.add(R.id.frameContainer,newItemFragment,"NEW_ITEM_FRAGMENT");
+        transaction.commit();
+    }
+
+    @Override
+    public void hideFragment() {
+        onBackPressed();
     }
 
     private class TableDragListener implements View.OnDragListener {

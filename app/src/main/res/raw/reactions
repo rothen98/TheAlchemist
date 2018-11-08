@@ -1,11 +1,16 @@
 Water+Fire=Steam
+Water+Lava=Steam
+
 Water+Earth=Mud
+
 Water+Water=Puddle
 
 Fire+Earth=Lava
+
 Fire+Sand=Glass
 
 Air+Air=Pressure
+
 Air+Stone=Sand
 
 Earth+Pressure=Stone

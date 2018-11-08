@@ -77,7 +77,9 @@ public class ItemView extends ItemHolder {
                     break;
                 case DragEvent.ACTION_DROP:
                     ItemHolder view = (ItemHolder) dragView;
-                    tryReaction(view,getX(),getY());
+                    float viewX = getX()+event.getX() - (view.getWidth() / 2);
+                    float viewY = getY()+event.getY()-(view.getHeight()/2);
+                    tryReaction(view,viewX,viewY,getX(),getY());
                 case DragEvent.ACTION_DRAG_ENDED:
 
                 default:
@@ -88,8 +90,8 @@ public class ItemView extends ItemHolder {
 
     }
 
-    private void tryReaction(ItemHolder view, float x, float y) {
-        parent.reaction(this,view,x,y);
+    private void tryReaction(ItemHolder view, float viewX, float viewY, float thisX, float thisY) {
+        parent.reaction(this,thisX,thisY,view,viewX,viewY);
     }
 }
 
