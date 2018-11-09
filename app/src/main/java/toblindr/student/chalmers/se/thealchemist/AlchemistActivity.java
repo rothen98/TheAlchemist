@@ -2,6 +2,7 @@ package toblindr.student.chalmers.se.thealchemist;
 
 
 import android.content.res.Resources;
+import android.media.MediaPlayer;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -12,7 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.io.BufferedReader;
@@ -34,7 +34,9 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     private LinearLayout itemLayout;
     private ConstraintLayout reactionView;
     private Facade facade;
-    private FrameLayout frameLayout;
+    private MediaPlayer errorSound;
+    private MediaPlayer succesSound;
+
 
     public AlchemistActivity() {
 
@@ -92,7 +94,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         this.itemLayout = findViewById(R.id.itemLayout);
         this.itemLayout.setOnDragListener(new ListDragListener());
         this.reactionView = findViewById(R.id.reaction_view);
-        this.frameLayout=findViewById(R.id.frameContainer);
+        this.errorSound = MediaPlayer.create(this,R.raw.wrong);
+        this.succesSound = MediaPlayer.create(this,R.raw.succes);
         reactionView.setOnDragListener(new TableDragListener());
         initItemLayout();
     }
@@ -102,6 +105,7 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         Collection<Item> knownItems = facade.getKnownItems();
         Item created = facade.tryReaction(item.getItem(),itemTwo.getItem());
         if(created != null){
+            succesSound.start();
             newItemDiscovered(created,item,itemX,itemY,itemTwo,knownItems);
         } else{
             if(itemTwo.canBeRemoved()){
@@ -118,6 +122,7 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
                 newView.setY(itemTwoY);
                 shake(newView);
             }
+            errorSound.start();
         }
     }
 
