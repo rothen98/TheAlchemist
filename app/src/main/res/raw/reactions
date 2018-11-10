@@ -1,5 +1,6 @@
 Water+Fire=Steam
 Water+Lava=Steam
+Water+Sun=Steam
 
 Water+Earth=Mud
 
@@ -8,6 +9,10 @@ Water+Water=Puddle
 Fire+Earth=Lava
 
 Fire+Sand=Glass
+
+Glass+Glass=Glasses
+
+Glasses+Sun=Sunglasses
 
 Air+Air=Pressure
 
@@ -18,5 +23,25 @@ Earth+Pressure=Stone
 Puddle+Puddle=Lake
 
 Lake+Lake=Ocean
+
+Earth+Earth=Land
+
+Land+Land=Continent
+
+Continent+Continent=Planet
+
+Planet+Planet=Solar System
+
+Planet+Fire=Sun
+
+Planet+Air=Atmosphere
+
+Air+Pressure=Wind
+
+Stone+Stone=Wall
+
+Wall+Wall=House
+
+Land+Ocean=Island
 
 

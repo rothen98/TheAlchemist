@@ -78,10 +78,16 @@ public class NewItemFragment extends Fragment {
         textView = view.findViewById(R.id.nameOfItem);
 
         textView.setText(name_of_item);
-        Bitmap b = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(),
+        Bitmap b = BitmapFactory.decodeResource(getResources(),
                 getResources().getIdentifier( image_path_of_item ,
-                        "drawable", getContext().getPackageName())),400,400,false);
-        imageView.setImageBitmap(b);
+                        "drawable", getContext().getPackageName()));
+        if(b != null){
+            Bitmap.createScaledBitmap(b,400,400,false);
+            imageView.setImageBitmap(b);
+        }else{
+            imageView.setImageBitmap(Util.getDefaultItemBitmap(getResources(),getContext(),400,400));
+        }
+
         backPane = view.findViewById(R.id.backPane);
         backPane.setOnClickListener(new View.OnClickListener() {
             @Override

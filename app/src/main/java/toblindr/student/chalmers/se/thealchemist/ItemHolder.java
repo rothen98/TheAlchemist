@@ -11,15 +11,22 @@ import toblindr.student.chalmers.se.thealchemist.model.Item;
 public abstract class ItemHolder extends AppCompatImageView {
     private Item item;
     private Bitmap bitmap;
+    public final static int SIZE = 170;
 
     public ItemHolder(Context context,Item item) {
         super(context);
         this.item = item;
-        this.bitmap = bitmap;
-        this.bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(),
+
+        Bitmap aBitmap = BitmapFactory.decodeResource(getResources(),
                 getResources().getIdentifier( item.getImagePath() ,
-                        "drawable", getContext().getPackageName())),150,150,false);
-        setImageBitmap(bitmap);
+                        "drawable", getContext().getPackageName()));
+        if(aBitmap!=null){
+            aBitmap = Bitmap.createScaledBitmap(aBitmap,SIZE,SIZE,false);
+            setImageBitmap(aBitmap);
+        }else{
+            setImageBitmap(Util.getDefaultItemBitmap(getResources(),getContext(),SIZE,SIZE));
+        }
+
     }
 
     public Item getItem(){

@@ -1,8 +1,9 @@
 package toblindr.student.chalmers.se.thealchemist.model;
 
 public class Item {
-    private String name;
-    private String imagePath;
+    private final String name;
+    private final String imagePath;
+
 
     Item (String name,String imagePath) {
         this.name = name;
@@ -30,4 +31,6 @@ public class Item {
 
         return name.hashCode();
     }
+
+
 }

@@ -12,6 +12,7 @@ public class ItemCreator {
     public static Item createItem(String name) throws ItemDoNotExistException {
         String path = allItems.get(name);
         if(path!=null){
+            System.out.println(path);
             return create(name,path);
         }else{
             throw new ItemDoNotExistException();

@@ -12,3 +12,14 @@ Stone:stone
 Sand:sand
 Glass:glass
 Ocean:ocean
+Glasses:glasses
+Land:land
+Continent:path
+Planet:planet
+Solar System:path
+Sun:path
+Atmosphere:path
+Wind:path
+Wall:wall
+House:house
+Island:path
