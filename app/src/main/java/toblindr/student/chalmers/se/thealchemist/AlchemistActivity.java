@@ -5,8 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.media.MediaPlayer;
-import android.os.Environment;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
@@ -17,25 +17,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import toblindr.student.chalmers.se.thealchemist.model.Facade;
 import toblindr.student.chalmers.se.thealchemist.model.Item;
@@ -43,19 +38,121 @@ import toblindr.student.chalmers.se.thealchemist.model.Reaction;
 
 import static android.view.View.VISIBLE;
 
-public class AlchemistActivity extends AppCompatActivity implements IItemParentController, NewItemFragment.OnFragmentInteractionListener {
+public class AlchemistActivity extends AppCompatActivity implements IItemParentController, NewItemFragment.OnFragmentInteractionListener, SettingsFragment.OnFragmentInteractionListener {
+    //Graphic
     private LinearLayout itemLayout;
     private ConstraintLayout reactionView;
-    private Facade facade;
+    private ImageButton settingsButton;
+    private ImageButton clearButton;
+    //Music
     private MediaPlayer errorSound;
     private MediaPlayer succesSound;
+    //Model
+    private Facade facade;
+    //Services
+    private DataHandler dataHandler;
+   //Constants
     private final static String FILENAME = "alchemist.txt";
-    private final boolean READ_FROM_PHONE = true;
+
 
     public AlchemistActivity() {
 
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        saveAllData();
+
 
     }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_alchemist);
+        dataHandler = new DataHandler(getApplicationContext());
+        facade = new Facade(initReactions(), initItems());
+
+        this.errorSound = MediaPlayer.create(this, R.raw.wrong);
+        this.succesSound = MediaPlayer.create(this, R.raw.succes);
+
+        this.reactionView = findViewById(R.id.reaction_view);
+        this.itemLayout = findViewById(R.id.itemLayout);
+        this.settingsButton = findViewById(R.id.settingsButton);
+        this.clearButton = findViewById(R.id.clearButton);
+
+        initButtons();
+        initItemLayout();
+
+        this.itemLayout.setOnDragListener(new ListDragListener());
+        this.reactionView.setOnDragListener(new TableDragListener());
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent intent = new Intent(this, BackgroundMusicService.class);
+        intent.setAction(BackgroundMusicService.PAUSE);
+        startService(intent);
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startService(new Intent(this, BackgroundMusicService.class));
+    }
+
+    //-------Data handling--------------------------------------------------------
+
+    private void saveAllData(){
+        StringBuilder sb = new StringBuilder();
+        for (Reaction r : facade.getAllUnknownReactions()) {
+            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + "\n";
+            sb.append(s);
+            System.out.println("Writing unknown: " + s);
+        }
+
+        for (Reaction r : facade.getAllKnownReactions()) {
+            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + ":true\n";
+            sb.append(s);
+            System.out.println("Writing known: " + s);
+        }
+
+        dataHandler.writeToPhoneFile(FILENAME,sb.toString());
+        Log.i("Info", "Data saved");
+    }
+    private Collection<String> initItems() {
+
+        List<String> itemsInfo = dataHandler.readRawTextFile(R.raw.items,getResources());
+        return itemsInfo;
+    }
+
+    private Collection<String> initReactions() {
+        //return dataHandler.readRawTextFile(R.raw.reactions,getResources());
+        List<String> reactionsPhone = dataHandler.readPhoneFile(FILENAME);//readFile();
+        List<String> reactionsRawFile = dataHandler.readRawTextFile(R.raw.reactions,getResources());
+        return combineReactions(reactionsPhone,reactionsRawFile);
+    }
+
+    private Collection<String> combineReactions(Collection<String> phoneFiles, Collection<String> rawFiles){
+        Collection<String> toReturn = new ArrayList<>();
+        for(String r:phoneFiles){
+            String justReaction = r.split(":")[0];
+            if(rawFiles.contains(justReaction)){
+                Log.i("Info","Added: " + r);
+                Log.i("Info","Removed: " + justReaction);
+                toReturn.add(r);
+                rawFiles.remove(justReaction);
+            }
+        }
+        toReturn.addAll(rawFiles);
+
+        return toReturn;
+    }
+
+    //--------------------Handle graphical components--------------------------------
 
     private void initItemLayout() {
         for (Item item : facade.getKnownItems()) {
@@ -83,76 +180,77 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         }
     }
 
-    private Collection<String> initItems() {
-
-        List<String> itemsInfo = readRawTextFile(R.raw.items);
-        return itemsInfo;
+    private void initButtons() {
+        initSettingsButton();
+        initClearButton();
     }
 
-    private Collection<String> initReactions() {
-        List<String> reactions = readFile();
-        if (READ_FROM_PHONE && reactions != null && !reactions.isEmpty()) {
-            return reactions;
-        } else {
-            return readRawTextFile(R.raw.reactions);
-        }
+    private void initClearButton() {
+        clearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                reactionView.removeAllViews();
+            }
+        });
     }
 
-    public List<String> readRawTextFile(int resId) {
-        Resources resources = getResources();
-        InputStream inputStream = resources.openRawResource(resId);
+    private void initSettingsButton() {
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment fragment = getSupportFragmentManager().findFragmentByTag("SETTINGS_FRAGMENT");
+                if(fragment==null){
+                    openSettingsFragment();
+                }else{
+                    onBackPressed();
+                    /*FragmentManager manager = getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = manager.beginTransaction();
+                    fragmentTransaction.remove(fragment);
+                    fragmentTransaction.commit();
+                    manager.popBackStack();*/
 
-        InputStreamReader inputreader = new InputStreamReader(inputStream);
-        BufferedReader buffreader = new BufferedReader(inputreader);
-        String line;
-        List<String> rows = new ArrayList<>();
 
-        try {
-            while ((line = buffreader.readLine()) != null) {
-                if (!line.isEmpty()) {
-                    rows.add(line);
                 }
             }
-        } catch (IOException e) {
-            return null;
-        }
-        return rows;
+        });
+
+    }
+
+    private void openSettingsFragment() {
+        Fragment fragment = SettingsFragment.newInstance();
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.addToBackStack(null);
+        transaction.add(R.id.frameContainer,fragment,"SETTINGS_FRAGMENT");
+        transaction.commit();
+    }
+
+    private void openNewItemFragment(Item newItem) {
+        NewItemFragment newItemFragment = NewItemFragment.newInstance(newItem.getName(), newItem.getImagePath());
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_right, R.anim.enter_from_right, R.anim.exit_from_right);
+        transaction.addToBackStack(null);
+        transaction.add(R.id.backPane, newItemFragment, "NEW_ITEM_FRAGMENT");
+        transaction.commit();
+    }
+
+    private ItemView createItemView(Item item) {
+        ItemView itemView = new ItemView(this, item, this);
+        return itemView;
+    }
+
+    public void shake(View view) {
+        final Animation animShake = AnimationUtils.loadAnimation(this, R.anim.shake);
+        view.startAnimation(animShake);
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        StringBuilder sb = new StringBuilder();
-        for (Reaction r : facade.getAllUnknownReactions()) {
-            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + "\n";
-            sb.append(s);
-            System.out.println("Writing unknown: " + s);
-        }
-
-        for (Reaction r : facade.getAllKnownReactions()) {
-            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + ":true\n";
-            sb.append(s);
-            System.out.println("Writing known: " + s);
-        }
-
-        writeToFile(sb.toString());
+    public void hideFragment() {
+        onBackPressed();
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_alchemist);
-
-        facade = new Facade(initReactions(), initItems());
-        this.reactionView = findViewById(R.id.reaction_view);
-        this.itemLayout = findViewById(R.id.itemLayout);
-
-        this.errorSound = MediaPlayer.create(this, R.raw.wrong);
-        this.succesSound = MediaPlayer.create(this, R.raw.succes);
-        this.itemLayout.setOnDragListener(new ListDragListener());
-        reactionView.setOnDragListener(new TableDragListener());
-        initItemLayout();
-    }
+    //-----------------Performing reaction------------------------------------------------------
 
     @Override
     public void reaction(ItemHolder item, float itemX, float itemY, ItemHolder itemTwo, float itemTwoX, float itemTwoY) {
@@ -191,7 +289,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
             owner.removeView(itemTwo);
         }
         if (!knownItems.contains(created)) {
-            openFragment(created);
+            saveAllData();
+            openNewItemFragment(created);
             itemLayout.addView(new ListCompleteItemView(this, created.getName(),
                     new ItemListView(this, created, this)));
             sortItemLayout();
@@ -203,20 +302,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         reactionView.addView(newView);
     }
 
-    private void openFragment(Item newItem) {
-        NewItemFragment newItemFragment = NewItemFragment.newInstance(newItem.getName(), newItem.getImagePath());
-        FragmentManager manager = getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_right, R.anim.enter_from_right, R.anim.exit_from_right);
-        transaction.addToBackStack(null);
-        transaction.add(R.id.frameContainer, newItemFragment, "NEW_ITEM_FRAGMENT");
-        transaction.commit();
-    }
 
-    @Override
-    public void hideFragment() {
-        onBackPressed();
-    }
+    //----------------------Drag Listeners------------------------------------------
 
     private class TableDragListener implements View.OnDragListener {
         @Override
@@ -258,31 +345,6 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         }
     }
 
-    private ItemView createItemView(Item item) {
-        ItemView itemView = new ItemView(this, item, this);
-        return itemView;
-    }
-
-    public void shake(View view) {
-        final Animation animShake = AnimationUtils.loadAnimation(this, R.anim.shake);
-        view.startAnimation(animShake);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Intent intent = new Intent(this, BackgroundMusicService.class);
-        intent.setAction(BackgroundMusicService.PAUSE);
-        startService(intent);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startService(new Intent(this, BackgroundMusicService.class));
-    }
-
-
     private class ListDragListener implements View.OnDragListener {
         @Override
         public boolean onDrag(View v, DragEvent event) {
@@ -313,40 +375,20 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         }
     }
 
-    public void writeToFile(String fileContents) {
-        String filename = FILENAME;
-        FileOutputStream outputStream;
-
-        try {
-            outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
-            outputStream.write(fileContents.getBytes());
-            outputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
-    public List<String> readFile() {
-        List<String> listToReturn = new ArrayList<>();
-        try {
-            FileInputStream fis = this.openFileInput(FILENAME);
-            InputStreamReader isr = new InputStreamReader(fis);
-            BufferedReader bufferedReader = new BufferedReader(isr);
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                listToReturn.add(line);
-                System.out.println("Reading: " + line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        return listToReturn;
+    //--------------------Options-----------------------------------------------------
+    @Override
+    public void noMusic() {
 
     }
+
+    @Override
+    public void resetGame() {
+        facade.resetGame();
+        itemLayout.removeAllViews();
+        initItemLayout();
+        reactionView.removeAllViews();
+    }
+
 
 
 }

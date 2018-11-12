@@ -14,6 +14,12 @@ Glass+Glass=Glasses
 
 Glasses+Sun=Sunglasses
 
+Glasses+Water=Swim Goggles
+Glasses+Puddle=Swim Goggles
+Glasses+Lake=Swim Goggles
+Glasses+Sea=Swim Goggles
+Glasses+Ocean=Swim Goggles
+
 Air+Air=Pressure
 
 Air+Stone=Sand
@@ -22,7 +28,9 @@ Earth+Pressure=Stone
 
 Puddle+Puddle=Lake
 
-Lake+Lake=Ocean
+Lake+Lake=Sea
+
+Sea+Sea=Ocean
 
 Earth+Earth=Land
 
@@ -42,6 +50,27 @@ Stone+Stone=Wall
 
 Wall+Wall=House
 
+House+Lake=Swimming Pool
+
 Land+Ocean=Island
+
+Sun+Glasses=Sunglasses
+
+House+House=Skyscraper
+
+Sand+House=Sand Castle
+
+Sand+Water=Water Treatment Plant
+
+Sand+Sea=Beach
+Sand+Ocean=Beach
+
+Beach+House=Beach Hut
+
+
+
+
+
+
 
 

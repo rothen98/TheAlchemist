@@ -13,10 +13,7 @@ class ItemsCollector {
 
     public ItemsCollector() {
         this.knownItems = new HashSet<>();
-        addItem("Fire");
-        addItem("Water");
-        addItem("Air");
-        addItem("Earth");
+        initKnownItems();
 
 
     }
@@ -38,4 +35,15 @@ class ItemsCollector {
         return new ArrayList<>(knownItems);
     }
 
+    public void reset() {
+        knownItems.clear();
+        initKnownItems();
+    }
+
+    private void initKnownItems() {
+        addItem("Fire");
+        addItem("Water");
+        addItem("Air");
+        addItem("Earth");
+    }
 }

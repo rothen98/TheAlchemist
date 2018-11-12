@@ -85,4 +85,9 @@ public class Facade {
     public Collection<Reaction> getAllKnownReactions(){
         return alchemist.getKnownReactions();
     }
+
+    public void resetGame(){
+        alchemist.reset();
+        collector.reset();
+    }
 }

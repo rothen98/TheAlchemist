@@ -116,4 +116,8 @@ class Alchemist {
     public Collection<Reaction> getKnownReactions(){
         return new HashSet<>(knownReactions);
     }
+
+    public void reset() {
+        knownReactions.clear();
+    }
 }
