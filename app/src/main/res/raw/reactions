@@ -50,6 +50,8 @@ Stone+Stone=Wall
 
 Wall+Wall=House
 
+House+Wall=Castle
+
 House+Lake=Swimming Pool
 
 Land+Ocean=Island
@@ -58,7 +60,7 @@ Sun+Glasses=Sunglasses
 
 House+House=Skyscraper
 
-Sand+House=Sand Castle
+Sand+Castle=Sand Castle
 
 Sand+Water=Water Treatment Plant
 
@@ -66,6 +68,12 @@ Sand+Sea=Beach
 Sand+Ocean=Beach
 
 Beach+House=Beach Hut
+
+Wind+Sea=Wave
+Ocean+Sea=Wave
+
+
+
 
 
 

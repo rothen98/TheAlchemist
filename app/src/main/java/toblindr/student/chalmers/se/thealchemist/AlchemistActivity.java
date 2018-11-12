@@ -82,6 +82,7 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         this.settingsButton = findViewById(R.id.settingsButton);
         this.clearButton = findViewById(R.id.clearButton);
 
+
         initButtons();
         initItemLayout();
 
