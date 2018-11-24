@@ -297,30 +297,34 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
                 newReactionDiscovered(reaction.getProducts(),itemX, itemY,knownItems);
             }else{
                 oldReactionPerformed(reaction.getProducts(),itemTwoX,itemTwo.getWidth(),itemTwoY);
-                handleItemOnTop(itemTwo,itemTwoX,itemTwoY);
+                handleItemOnTop(itemTwo,itemTwoX,itemTwoY,false);
 
 
             }
         } else {
-            handleItemOnTop(itemTwo,itemTwoX,itemTwoY);
+            handleItemOnTop(itemTwo,itemTwoX,itemTwoY,true);
             errorSound.start();
         }
     }
 
-    private void handleItemOnTop(ItemHolder itemTwo, float itemTwoX, float itemTwoY) {
+    private void handleItemOnTop(ItemHolder itemTwo, float itemTwoX, float itemTwoY,boolean shake) {
         if (itemTwo.canBeRemoved()) {
             reactionView.removeView(itemTwo);
             reactionView.addView(itemTwo);
             itemTwo.setX(itemTwoX);
             itemTwo.setY(itemTwoY);
             itemTwo.setVisibility(VISIBLE);
-            shake(itemTwo);
+            if(shake) {
+                shake(itemTwo);
+            }
         } else {
             ItemView newView = createItemView(itemTwo.getItem());
             reactionView.addView(newView);
             newView.setX(itemTwoX);
             newView.setY(itemTwoY);
-            shake(newView);
+            if(shake) {
+                shake(newView);
+            }
         }
     }
 
@@ -340,12 +344,13 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         for(Item i:products){
             final SmallImageView smallview= new SmallImageView(getApplicationContext(),i);
             smallview.setX(itemX+(itemWidth-SmallImageView.SIZE)/2);
-            smallview.setY(itemY-100);
+            smallview.setY(itemY);
+            smallview.setAlpha(0.0f);
             reactionView.addView(smallview);
             // Start the animation
             smallview.animate()
-                    .translationYBy(-100)
-                    .alpha(0.0f)
+                    .translationY(itemY-SmallImageView.SIZE-20)
+                    .alpha(1.0f)
                     .setDuration(1000)
                     .setStartDelay(200)
                     .setListener(new Animator.AnimatorListener() {
@@ -356,7 +361,29 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
 
                         @Override
                         public void onAnimationEnd(Animator animation) {
-                            reactionView.removeView(smallview);
+                            smallview.animate().alpha(0.0f).setDuration(200).setStartDelay(200).setListener(new Animator.AnimatorListener() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    reactionView.removeView(smallview);
+                                }
+
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationRepeat(Animator animation) {
+
+                                }
+                            });
+
+
                         }
 
                         @Override
