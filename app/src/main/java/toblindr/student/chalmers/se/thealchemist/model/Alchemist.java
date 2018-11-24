@@ -27,18 +27,20 @@ class Alchemist {
     }
 
     /**
-     * Performs a reaction between the two given items. If succesful, an item is returned.
+     * Performs a reaction between the given items. If succesful, the products are returned.
      * If failed, null is returned.
-     * @param itemOne the first item
-     * @param itemTwo the second item
+     *
      * @return an item or null
      */
-    public Item generate(Item itemOne, Item itemTwo) {
+    public Reaction generate(Collection<Item> reactants) {
             for (Reaction reaction: allReactions){
-                if (reaction.hasReactants(itemOne,itemTwo)){
+                if (reaction.hasReactants(reactants)){
                     knownReactions.add(reaction);
-                    itemsCollector.addItem(reaction.getProduct());
-                    return reaction.getProduct();
+                    for(Item item:reaction.getProducts()){
+                        itemsCollector.addItem(item);
+                    }
+
+                    return reaction;
                 }
             }
             return null;

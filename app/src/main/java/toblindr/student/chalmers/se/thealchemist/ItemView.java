@@ -48,6 +48,7 @@ public class ItemView extends ItemHolder {
                 clipData : to be dragged data.
                 dragShadowBuilder : the shadow of the dragged view.*/
                 view.startDrag(clipData, dragShadowBuilder, view, 0);
+                //Todo start drag should be start drag and drop?
 
 
                 // Hide the view object because we are dragging it.

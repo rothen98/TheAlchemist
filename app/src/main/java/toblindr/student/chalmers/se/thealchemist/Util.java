@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 class Util {
-    private static Bitmap defaultItemBitmap;
 
     public static Bitmap getDefaultItemBitmap(Resources resources, Context context,int width,int height) {
         return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources,

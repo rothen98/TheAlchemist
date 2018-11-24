@@ -14,22 +14,31 @@ Glass:glass
 Ocean:ocean
 Glasses:glasses
 Land:land
-Continent:path
+Continent:continent
 Planet:planet
 Solar System:path
-Sun:path
-Atmosphere:path
+Sun:sun
+Atmosphere:atmosphere
 Wind:path
 Wall:wall
 House:house
-Island:path
+Island:island
 Sunglasses:path
 Sea:path
 Skyscraper:path
 Swimming Pool:path
-Sand Castle:path
+Sand Castle:sand_castle
 Water Treatment Plant:path
-Beach:path
+Beach:beach
 Beach Hut:path
-Castle:path
+Castle:castle
 Wave:path
+Swim Goggles:path
+Brick:path
+Mountain:path
+Wind Wave:path
+Radiation:path
+Sound:path
+Metal:path
+Rust:path
+Aquarium:path

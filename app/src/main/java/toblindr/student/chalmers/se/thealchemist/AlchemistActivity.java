@@ -1,6 +1,7 @@
 package toblindr.student.chalmers.se.thealchemist;
 
 
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -11,13 +12,16 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import java.io.BufferedReader;
@@ -31,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import toblindr.student.chalmers.se.thealchemist.model.Facade;
 import toblindr.student.chalmers.se.thealchemist.model.Item;
@@ -42,11 +47,13 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     //Graphic
     private LinearLayout itemLayout;
     private ConstraintLayout reactionView;
-    private ImageButton settingsButton;
-    private ImageButton clearButton;
+    private Button settingsButton;
+    private Button clearButton;
     //Music
     private MediaPlayer errorSound;
     private MediaPlayer succesSound;
+    private MediaPlayer blopSound;
+    private MediaPlayer popSound;
     //Model
     private Facade facade;
     //Services
@@ -76,6 +83,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
 
         this.errorSound = MediaPlayer.create(this, R.raw.wrong);
         this.succesSound = MediaPlayer.create(this, R.raw.succes);
+        this.blopSound = MediaPlayer.create(this,R.raw.blop);
+        this.popSound = MediaPlayer.create(this,R.raw.blop);
 
         this.reactionView = findViewById(R.id.reaction_view);
         this.itemLayout = findViewById(R.id.itemLayout);
@@ -110,15 +119,34 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     private void saveAllData(){
         StringBuilder sb = new StringBuilder();
         for (Reaction r : facade.getAllUnknownReactions()) {
-            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + "\n";
-            sb.append(s);
-            System.out.println("Writing unknown: " + s);
+            for(Item item:r.getReactants()){
+                String s = item.getName() + "+";
+                sb.append(s);
+            }
+            sb.setLength(sb.length() - 1);
+            sb.append("=");
+            for(Item item:r.getProducts()){
+                String s = item.getName() + "+";
+                sb.append(s);
+            }
+            sb.setLength(sb.length() - 1);
+            sb.append("\n");
         }
 
         for (Reaction r : facade.getAllKnownReactions()) {
-            String s = r.getReactantOne().getName() + "+" + r.getReactantTwo().getName() + "=" + r.getProduct().getName() + ":true\n";
-            sb.append(s);
-            System.out.println("Writing known: " + s);
+            for(Item item:r.getReactants()){
+                String s = item.getName() + "+";
+                sb.append(s);
+            }
+            sb.setLength(sb.length() - 1);
+            sb.append("=");
+            for(Item item:r.getProducts()){
+                String s = item.getName() + "+";
+                sb.append(s);
+            }
+            sb.setLength(sb.length() - 1);
+            sb.append(":true");
+            sb.append("\n");
         }
 
         dataHandler.writeToPhoneFile(FILENAME,sb.toString());
@@ -191,6 +219,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
             @Override
             public void onClick(View v) {
                 reactionView.removeAllViews();
+                Animation animation = AnimationUtils.loadAnimation(AlchemistActivity.this, R.anim.rotate);
+                v.startAnimation(animation);
             }
         });
     }
@@ -226,13 +256,13 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         transaction.commit();
     }
 
-    private void openNewItemFragment(Item newItem) {
+    private void openNewItemFragment(Item newItem, String tag) {
         NewItemFragment newItemFragment = NewItemFragment.newInstance(newItem.getName(), newItem.getImagePath());
         FragmentManager manager = getSupportFragmentManager();
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_right, R.anim.enter_from_right, R.anim.exit_from_right);
         transaction.addToBackStack(null);
-        transaction.add(R.id.backPane, newItemFragment, "NEW_ITEM_FRAGMENT");
+        transaction.add(R.id.backPane, newItemFragment, tag);
         transaction.commit();
     }
 
@@ -256,30 +286,118 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     @Override
     public void reaction(ItemHolder item, float itemX, float itemY, ItemHolder itemTwo, float itemTwoX, float itemTwoY) {
         Collection<Item> knownItems = facade.getKnownItems();
-        Item created = facade.tryReaction(item.getItem(), itemTwo.getItem());
-        if (created != null) {
-            succesSound.start();
-            newItemDiscovered(created, item, itemX, itemY, itemTwo, knownItems);
-        } else {
-            if (itemTwo.canBeRemoved()) {
-                reactionView.removeView(itemTwo);
-                reactionView.addView(itemTwo);
-                itemTwo.setX(itemTwoX);
-                itemTwo.setY(itemTwoY);
-                itemTwo.setVisibility(VISIBLE);
-                shake(itemTwo);
-            } else {
-                ItemView newView = createItemView(itemTwo.getItem());
-                reactionView.addView(newView);
-                newView.setX(itemTwoX);
-                newView.setY(itemTwoY);
-                shake(newView);
+        Collection<Reaction> knownReactions = facade.getAllKnownReactions();
+        List<Item> reactants= new ArrayList<>();
+        reactants.add(item.getItem());
+        reactants.add(itemTwo.getItem());
+        Reaction reaction = facade.tryReaction(reactants);
+        if (reaction != null) {
+            if(!knownReactions.contains(reaction)){
+                tryToRemoveItemViews(item,itemTwo);
+                newReactionDiscovered(reaction.getProducts(),itemX, itemY,knownItems);
+            }else{
+                oldReactionPerformed(reaction.getProducts(),itemTwoX,itemTwo.getWidth(),itemTwoY);
+                handleItemOnTop(itemTwo,itemTwoX,itemTwoY);
+
+
             }
+        } else {
+            handleItemOnTop(itemTwo,itemTwoX,itemTwoY);
             errorSound.start();
         }
     }
 
-    private void newItemDiscovered(Item created, ItemHolder item, float itemX, float itemY,
+    private void handleItemOnTop(ItemHolder itemTwo, float itemTwoX, float itemTwoY) {
+        if (itemTwo.canBeRemoved()) {
+            reactionView.removeView(itemTwo);
+            reactionView.addView(itemTwo);
+            itemTwo.setX(itemTwoX);
+            itemTwo.setY(itemTwoY);
+            itemTwo.setVisibility(VISIBLE);
+            shake(itemTwo);
+        } else {
+            ItemView newView = createItemView(itemTwo.getItem());
+            reactionView.addView(newView);
+            newView.setX(itemTwoX);
+            newView.setY(itemTwoY);
+            shake(newView);
+        }
+    }
+
+    private void tryToRemoveItemViews(ItemHolder item, ItemHolder itemTwo) {
+        if (item.canBeRemoved()) {
+            ViewGroup owner = (ViewGroup) item.getParent();
+            owner.removeView(item);
+        }
+        if (itemTwo.canBeRemoved()) {
+            ViewGroup owner = (ViewGroup) itemTwo.getParent();
+            owner.removeView(itemTwo);
+        }
+    }
+
+    private void oldReactionPerformed(Set<Item> products, float itemX, float itemWidth, float itemY) {
+        blopSound.start();
+        for(Item i:products){
+            final SmallImageView smallview= new SmallImageView(getApplicationContext(),i);
+            smallview.setX(itemX+(itemWidth-SmallImageView.SIZE)/2);
+            smallview.setY(itemY-100);
+            reactionView.addView(smallview);
+            // Start the animation
+            smallview.animate()
+                    .translationYBy(-100)
+                    .alpha(0.0f)
+                    .setDuration(1000)
+                    .setStartDelay(200)
+                    .setListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            reactionView.removeView(smallview);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+        }
+    }
+
+    private void newReactionDiscovered(Set<Item> items, float itemX, float itemY
+            ,Collection<Item> knownItems) {
+
+        boolean playSuccesSound=false;
+        for(Item i:items){
+            if (!knownItems.contains(i)) {
+                playSuccesSound=true;
+                saveAllData();
+                openNewItemFragment(i,i.getName().toUpperCase());
+                itemLayout.addView(new ListCompleteItemView(this, i.getName(),
+                        new ItemListView(this, i, this)));
+                sortItemLayout();
+            }
+            ItemView newView = createItemView(i);
+            newView.setX(itemX - (newView.getWidth() / 2));
+            newView.setY(itemY - (newView.getHeight() / 2));
+            reactionView.addView(newView);
+        }
+        if (playSuccesSound){
+            succesSound.start();
+        }else{
+            popSound.start();
+        }
+    }
+
+    private void newItemDiscovered(Set<Item> created, ItemHolder item, float itemX, float itemY,
                                    ItemHolder itemTwo, Collection<Item> knownItems) {
         if (item.canBeRemoved()) {
             ViewGroup owner = (ViewGroup) item.getParent();
@@ -289,18 +407,23 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
             ViewGroup owner = (ViewGroup) itemTwo.getParent();
             owner.removeView(itemTwo);
         }
-        if (!knownItems.contains(created)) {
-            saveAllData();
-            openNewItemFragment(created);
-            itemLayout.addView(new ListCompleteItemView(this, created.getName(),
-                    new ItemListView(this, created, this)));
-            sortItemLayout();
+        for(Item i:created){
+            if (!knownItems.contains(i)) {
+
+                saveAllData();
+                openNewItemFragment(i,i.getName().toUpperCase());
+                itemLayout.addView(new ListCompleteItemView(this, i.getName(),
+                        new ItemListView(this, i, this)));
+                sortItemLayout();
+            }
+            ItemView newView = createItemView(i);
+            newView.setX(itemX - (newView.getWidth() / 2));
+            newView.setY(itemY - (newView.getHeight() / 2));
+            reactionView.addView(newView);
         }
 
-        ItemView newView = createItemView(created);
-        newView.setX(itemX - (newView.getWidth() / 2));
-        newView.setY(itemY - (newView.getHeight() / 2));
-        reactionView.addView(newView);
+
+
     }
 
 

@@ -1,6 +1,7 @@
 package toblindr.student.chalmers.se.thealchemist;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.widget.GridLayout;
@@ -17,6 +18,7 @@ public class ListCompleteItemView extends GridLayout {
         addView(imageView);
         TextView textView = new TextView(getContext());
         textView.setTextAlignment(TEXT_ALIGNMENT_CENTER);
+        textView.setTextColor(Color.rgb(113,72,65));
         GridLayout.LayoutParams param = new GridLayout.LayoutParams();
         param.setGravity(Gravity.CENTER_VERTICAL |Gravity.START);
         param.setMarginStart(20);

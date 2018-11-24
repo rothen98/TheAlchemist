@@ -34,7 +34,7 @@
                     android:id="@+id/itemLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#ebd3a5"
+                    android:background="@color/colorPrimaryDark"
                     android:orientation="vertical"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -46,7 +46,7 @@
                 android:id="@+id/reaction_view"
                 android:layout_width="258dp"
                 android:layout_height="0dp"
-                android:background="#e7c581"
+                android:background="@color/colorPrimary"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/scrollView2"
                 app:layout_constraintStart_toStartOf="parent"
@@ -58,33 +58,48 @@
             <LinearLayout
                 android:id="@+id/buttonsMenu"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:background="@android:color/holo_orange_light"
+                android:layout_height="62dp"
+                android:background="#8a4134"
                 android:orientation="horizontal"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
 
-                <ImageButton
+                <Button
                     android:id="@+id/clearButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    app:srcCompat="@android:drawable/star_big_on" />
+                    android:background="@color/colorAccent"
+                    android:drawableTop="@drawable/clean_icon"
+                    android:drawablePadding="-10sp"
+                    android:paddingTop="10sp"
+                    android:text="Clean Up"
+                    android:textSize="12sp" />
 
-                <ImageButton
-                    android:id="@+id/settingsButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    app:srcCompat="@android:drawable/ic_input_add" />
-
-                <ImageButton
+                <Button
                     android:id="@+id/encyclopediaButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    app:srcCompat="@android:drawable/btn_radio" />
+                    android:background="@color/colorAccent"
+                    android:drawableTop="@drawable/encyclopedia_icon"
+                    android:drawablePadding="-10sp"
+                    android:paddingTop="10sp"
+                    android:text="Encyclopedia"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/settingsButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@color/colorAccent"
+                    android:drawableTop="@drawable/settings_icon_large"
+                    android:drawablePadding="-10sp"
+                    android:paddingTop="10sp"
+                    android:text="Settings"
+                    android:textSize="12sp" />
 
             </LinearLayout>
 

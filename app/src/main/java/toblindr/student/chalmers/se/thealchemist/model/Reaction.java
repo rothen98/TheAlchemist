@@ -1,41 +1,61 @@
 package toblindr.student.chalmers.se.thealchemist.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class Reaction {
-    private final Item reactantOne;
-    private final Item reactantTwo;
-    private final Item product;
+    private final List<Item> reactants;
+    private final Set<Item> products;
 
-    Reaction(Item reactantOne, Item reactantTwo, Item product) {
-        this.reactantOne = reactantOne;
-        this.reactantTwo = reactantTwo;
-        this.product = product;
+    Reaction(List<Item> reactants, Set<Item> products) {
+        this.reactants = reactants;
+        this.products = products;
+
     }
 
-    public Item getReactantOne() {
-        return reactantOne;
+    public Collection<Item> getReactants(){
+        return new ArrayList<>(reactants);
     }
 
-    public Item getReactantTwo() {
-        return reactantTwo;
-    }
 
-    public Item getProduct() {
-        return product;
+    public Set<Item> getProducts() {
+        return new HashSet<>(products);
     }
 
     public boolean hasReactant(Item item) {
-        return reactantOne.equals(item)||reactantTwo.equals(item);
+        return reactants.contains(item);
     }
 
     public boolean hasProduct(Item item){
-        return product.equals(item);
+        return products.contains(item);
+    }
+    public boolean hasProducts(Collection<Item> products){
+        return this.products.equals(products);
     }
 
-    public boolean hasReactants(Item itemOne, Item itemTwo) {
-        return (reactantOne.equals(itemOne) && reactantTwo.equals(itemTwo)) ||
-                (reactantOne.equals(itemTwo) && reactantTwo.equals(itemOne));
+    public boolean hasReactants(Collection<Item> reactants) {
+        List<Item> copyOfReactants=new ArrayList<>(this.reactants);
+        List<Item> copyOfGivenReactants = new ArrayList<>(reactants);
+        for(Item r: reactants){
+            if(copyOfReactants.contains(r)){
+                copyOfReactants.remove(r);
+            }else{
+                return false;
+            }
+        }
+
+        for(Item r:this.reactants){
+            if(copyOfGivenReactants.contains(r)){
+                copyOfGivenReactants.remove(r);
+            }else{
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -44,13 +64,12 @@ public class Reaction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Reaction reaction = (Reaction) o;
-        return hasReactants(reaction.reactantOne,reaction.reactantTwo) &&
-                hasProduct(reaction.product);
+        return hasReactants(reaction.getReactants()) &&
+                hasProducts(reaction.getProducts());
     }
 
     @Override
     public int hashCode() {
-
-        return reactantOne.hashCode()+reactantTwo.hashCode()+product.hashCode();
+        return reactants.hashCode()+products.hashCode();
     }
 }

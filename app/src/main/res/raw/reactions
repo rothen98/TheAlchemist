@@ -46,7 +46,11 @@ Planet+Air=Atmosphere
 
 Air+Pressure=Wind
 
-Stone+Stone=Wall
+Fire+Mud=Brick
+
+Brick+Brick=Wall
+
+Stone+Stone=Mountain
 
 Wall+Wall=House
 
@@ -58,7 +62,9 @@ Land+Ocean=Island
 
 Sun+Glasses=Sunglasses
 
-House+House=Skyscraper
+House+House=Village
+
+Village+Village=City
 
 Sand+Castle=Sand Castle
 
@@ -69,8 +75,19 @@ Sand+Ocean=Beach
 
 Beach+House=Beach Hut
 
-Wind+Sea=Wave
-Ocean+Sea=Wave
+Wind+Sea=Wind Wave
+Wind+Ocean=Wind Wave
+
+Wind Wave+Air=Radiation+Sound
+
+Fire+Stone=Metal
+
+Air+Metal=Rust
+
+Water+Glass=Aquarium
+
+
+
 
 
 
