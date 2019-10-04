@@ -11,6 +11,7 @@ class ItemsCollector {
 
 
 
+
     public ItemsCollector() {
         this.knownItems = new HashSet<>();
         initKnownItems();
@@ -45,5 +46,14 @@ class ItemsCollector {
         addItem("Water");
         addItem("Air");
         addItem("Earth");
+    }
+
+    public boolean itemsAreKnown(Collection<Item> reactants) {
+        for(Item i:reactants){
+            if(!knownItems.contains(i)){
+                return false;
+            }
+        }
+        return true;
     }
 }

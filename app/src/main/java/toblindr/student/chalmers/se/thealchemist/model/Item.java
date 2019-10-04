@@ -32,5 +32,8 @@ public class Item {
         return name.hashCode();
     }
 
-
+    @Override
+    public String toString() {
+        return name;
+    }
 }

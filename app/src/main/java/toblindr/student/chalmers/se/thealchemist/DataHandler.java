@@ -13,10 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataHandler {
-    private Context context;
 
-    public DataHandler(Context context) {
-        this.context = context;
+    public DataHandler() {
+
     }
 
     public List<String> readRawTextFile(int resId, Resources resources) {
@@ -39,7 +38,7 @@ public class DataHandler {
         return rows;
     }
 
-    public List<String> readPhoneFile(String filename) {
+    public List<String> readPhoneFile(String filename, Context context) {
         List<String> listToReturn = new ArrayList<>();
         try {
             FileInputStream fis = context.openFileInput(filename);
@@ -59,7 +58,7 @@ public class DataHandler {
 
     }
 
-    public void writeToPhoneFile(String filename, String data) {
+    public void writeToPhoneFile(String filename, String data, Context context) {
         FileOutputStream outputStream;
         try {
             outputStream = context.openFileOutput(filename, Context.MODE_PRIVATE);
@@ -69,4 +68,6 @@ public class DataHandler {
             e.printStackTrace();
         }
     }
+
+
 }

@@ -1,7 +1,7 @@
-Fire:fire
-Water:water
-Air:air
-Earth:earth
+Fire:fire:important
+Water:water:important
+Air:air:important
+Earth:earth:important
 Steam:steam
 Lava:lava
 Mud:mud
@@ -25,7 +25,7 @@ House:house
 Island:island
 Sunglasses:path
 Sea:path
-Skyscraper:path
+Village:path
 Swimming Pool:path
 Sand Castle:sand_castle
 Water Treatment Plant:path
@@ -42,3 +42,4 @@ Sound:path
 Metal:path
 Rust:path
 Aquarium:path
+Energy:path

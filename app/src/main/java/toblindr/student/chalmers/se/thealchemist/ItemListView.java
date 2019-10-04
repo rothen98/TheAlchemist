@@ -29,6 +29,12 @@ public class ItemListView extends ItemHolder {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                //ItemView it = new ItemView(getContext(),getItem(),parent);
+                //String tag = (String)it.getTag();
+                //ClipData clipData = ClipData.newPlainText("", tag);
+                //View.DragShadowBuilder dragShadowBuilder = new View.DragShadowBuilder(it);
+                //view.startDrag(clipData, dragShadowBuilder, it, 0);
+                //Todo above possible instead?
                 // Get view object tag value.
                 String tag = (String)view.getTag();
 

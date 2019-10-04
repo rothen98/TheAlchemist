@@ -2,9 +2,10 @@ package toblindr.student.chalmers.se.thealchemist;
 
 
 import android.animation.Animator;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
@@ -12,7 +13,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
@@ -20,46 +20,49 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
-import toblindr.student.chalmers.se.thealchemist.model.Facade;
 import toblindr.student.chalmers.se.thealchemist.model.Item;
 import toblindr.student.chalmers.se.thealchemist.model.Reaction;
 
 import static android.view.View.VISIBLE;
 
 public class AlchemistActivity extends AppCompatActivity implements IItemParentController, NewItemFragment.OnFragmentInteractionListener, SettingsFragment.OnFragmentInteractionListener {
+    private static final String ITEM_ID = "item_id";
+    private static final String REACTION_ID = "reaction_id";
     //Graphic
     private LinearLayout itemLayout;
     private ConstraintLayout reactionView;
     private Button settingsButton;
     private Button clearButton;
+    private Button encyclopediaButton;
+    private Button hintButton;
     //Music
     private MediaPlayer errorSound;
     private MediaPlayer succesSound;
     private MediaPlayer blopSound;
     private MediaPlayer popSound;
     //Model
-    private Facade facade;
+
     //Services
     private DataHandler dataHandler;
    //Constants
     private final static String FILENAME = "alchemist.txt";
+
+    // initialize SharedPreferences var
+    private SharedPreferences sharedPref;
+
+    private AlchemistViewModel viewModel;
+
+    //fragments
+    private EncyclopediaFragment encyclopediaFragment;
 
 
     public AlchemistActivity() {
@@ -69,7 +72,7 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     @Override
     protected void onStop() {
         super.onStop();
-        saveAllData();
+        // todo saveAllData();
 
 
     }
@@ -78,8 +81,14 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alchemist);
-        dataHandler = new DataHandler(getApplicationContext());
-        facade = new Facade(initReactions(), initItems());
+        dataHandler = new DataHandler();
+        sharedPref = getSharedPreferences("myPref", MODE_PRIVATE);
+        viewModel = ViewModelProviders.of(this,
+                new MyViewModelFactory(this.getApplication(),
+                        sharedPref.getString(ITEM_ID,"EMPTY"),
+                        sharedPref.getString(REACTION_ID,"EMPTY"))).get(AlchemistViewModel.class);
+
+        encyclopediaFragment = EncyclopediaFragment.newInstance();
 
         this.errorSound = MediaPlayer.create(this, R.raw.wrong);
         this.succesSound = MediaPlayer.create(this, R.raw.succes);
@@ -90,6 +99,8 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         this.itemLayout = findViewById(R.id.itemLayout);
         this.settingsButton = findViewById(R.id.settingsButton);
         this.clearButton = findViewById(R.id.clearButton);
+        this.hintButton=findViewById(R.id.hintButton);
+        this.encyclopediaButton=findViewById(R.id.encyclopediaButton);
 
 
         initButtons();
@@ -116,75 +127,14 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
 
     //-------Data handling--------------------------------------------------------
 
-    private void saveAllData(){
-        StringBuilder sb = new StringBuilder();
-        for (Reaction r : facade.getAllUnknownReactions()) {
-            for(Item item:r.getReactants()){
-                String s = item.getName() + "+";
-                sb.append(s);
-            }
-            sb.setLength(sb.length() - 1);
-            sb.append("=");
-            for(Item item:r.getProducts()){
-                String s = item.getName() + "+";
-                sb.append(s);
-            }
-            sb.setLength(sb.length() - 1);
-            sb.append("\n");
-        }
 
-        for (Reaction r : facade.getAllKnownReactions()) {
-            for(Item item:r.getReactants()){
-                String s = item.getName() + "+";
-                sb.append(s);
-            }
-            sb.setLength(sb.length() - 1);
-            sb.append("=");
-            for(Item item:r.getProducts()){
-                String s = item.getName() + "+";
-                sb.append(s);
-            }
-            sb.setLength(sb.length() - 1);
-            sb.append(":true");
-            sb.append("\n");
-        }
 
-        dataHandler.writeToPhoneFile(FILENAME,sb.toString());
-        Log.i("Info", "Data saved");
-    }
-    private Collection<String> initItems() {
 
-        List<String> itemsInfo = dataHandler.readRawTextFile(R.raw.items,getResources());
-        return itemsInfo;
-    }
-
-    private Collection<String> initReactions() {
-        //return dataHandler.readRawTextFile(R.raw.reactions,getResources());
-        List<String> reactionsPhone = dataHandler.readPhoneFile(FILENAME);//readFile();
-        List<String> reactionsRawFile = dataHandler.readRawTextFile(R.raw.reactions,getResources());
-        return combineReactions(reactionsPhone,reactionsRawFile);
-    }
-
-    private Collection<String> combineReactions(Collection<String> phoneFiles, Collection<String> rawFiles){
-        Collection<String> toReturn = new ArrayList<>();
-        for(String r:phoneFiles){
-            String justReaction = r.split(":")[0];
-            if(rawFiles.contains(justReaction)){
-                Log.i("Info","Added: " + r);
-                Log.i("Info","Removed: " + justReaction);
-                toReturn.add(r);
-                rawFiles.remove(justReaction);
-            }
-        }
-        toReturn.addAll(rawFiles);
-
-        return toReturn;
-    }
 
     //--------------------Handle graphical components--------------------------------
 
     private void initItemLayout() {
-        for (Item item : facade.getKnownItems()) {
+        for (Item item : viewModel.getKnownItems()) {
             ListCompleteItemView itemView = new ListCompleteItemView(this, item.getName(),
                     new ItemListView(this, item, this));
             itemLayout.addView(itemView);
@@ -212,6 +162,54 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
     private void initButtons() {
         initSettingsButton();
         initClearButton();
+        initEncyclopediaButton();
+        initHintButton();
+    }
+
+    private void initHintButton() {
+        hintButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Item hint = viewModel.getHint();
+                Context context = getApplicationContext();
+                CharSequence text = "";
+
+                if(hint!=null){
+                    text = "The hint is: "+ hint.toString();
+                }else{
+                    text = "Couldn't find any hints";
+                }
+
+                int duration = Toast.LENGTH_LONG;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+            }
+        });
+
+    }
+
+    private void initEncyclopediaButton() {
+        encyclopediaButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager manager = getSupportFragmentManager();
+                Fragment fragment = manager.findFragmentByTag("ENCYCLOPEDIA_FRAGMENT");
+                if(fragment==null){
+                    openEncyclopediaFragment();
+                }else if(!fragment.isVisible()){
+                    FragmentTransaction transaction = manager.beginTransaction();
+                    transaction.show(fragment);
+                    transaction.commit();
+                }
+                else{
+                    FragmentTransaction transaction = manager.beginTransaction();
+                    transaction.hide(fragment);
+                    transaction.commit();
+                }
+
+            }
+        });
     }
 
     private void initClearButton() {
@@ -229,18 +227,12 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Fragment fragment = getSupportFragmentManager().findFragmentByTag("SETTINGS_FRAGMENT");
                 if(fragment==null){
                     openSettingsFragment();
                 }else{
                     onBackPressed();
-                    /*FragmentManager manager = getSupportFragmentManager();
-                    FragmentTransaction fragmentTransaction = manager.beginTransaction();
-                    fragmentTransaction.remove(fragment);
-                    fragmentTransaction.commit();
-                    manager.popBackStack();*/
-
-
                 }
             }
         });
@@ -252,7 +244,7 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         FragmentManager manager = getSupportFragmentManager();
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.addToBackStack(null);
-        transaction.add(R.id.frameContainer,fragment,"SETTINGS_FRAGMENT");
+        transaction.add(R.id.centerPane,fragment,"SETTINGS_FRAGMENT");
         transaction.commit();
     }
 
@@ -263,6 +255,16 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
         transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_right, R.anim.enter_from_right, R.anim.exit_from_right);
         transaction.addToBackStack(null);
         transaction.add(R.id.backPane, newItemFragment, tag);
+        transaction.commit();
+    }
+
+    private void openEncyclopediaFragment(){
+        EncyclopediaFragment fragment = encyclopediaFragment;
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_right, R.anim.enter_from_right, R.anim.exit_from_right);
+        transaction.addToBackStack(null);
+        transaction.add(R.id.centerPane, fragment, "ENCYCLOPEDIA_FRAGMENT");
         transaction.commit();
     }
 
@@ -283,28 +285,123 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
 
     //-----------------Performing reaction------------------------------------------------------
 
+
     @Override
-    public void reaction(ItemHolder item, float itemX, float itemY, ItemHolder itemTwo, float itemTwoX, float itemTwoY) {
-        Collection<Item> knownItems = facade.getKnownItems();
-        Collection<Reaction> knownReactions = facade.getAllKnownReactions();
+    public void reaction(ItemHolder item, float itemX, float itemY, ItemHolder itemTwo, float itemTwoX, float itemTwoY){
         List<Item> reactants= new ArrayList<>();
         reactants.add(item.getItem());
         reactants.add(itemTwo.getItem());
-        Reaction reaction = facade.tryReaction(reactants);
-        if (reaction != null) {
-            if(!knownReactions.contains(reaction)){
-                tryToRemoveItemViews(item,itemTwo);
-                newReactionDiscovered(reaction.getProducts(),itemX, itemY,knownItems);
-            }else{
-                oldReactionPerformed(reaction.getProducts(),itemTwoX,itemTwo.getWidth(),itemTwoY);
-                handleItemOnTop(itemTwo,itemTwoX,itemTwoY,false);
+        Map<Item,ItemStatus> items  = viewModel.tryReaction(reactants);
+        if(!items.isEmpty()){
+            for(Map.Entry<Item,ItemStatus> entry: items.entrySet()){
+                if(entry.getValue()==ItemStatus.NEW){
+                    unknownItem(entry.getKey(),itemX,itemY);
+                }else if(entry.getValue()==ItemStatus.NEW_REACTION){
+                    knownItemFromUnknownReaction(entry.getKey(),itemX,itemY);
+                }else{
+                    knownItemFromKnownReaction(entry.getKey(),itemTwoX,itemTwo.getWidth(),itemTwoY);
 
-
+                }
             }
-        } else {
+            if(items.values().contains(ItemStatus.NEW)){
+                tryToRemoveItemViews(item,itemTwo);
+                succesSound.start();
+            }else if(items.values().contains(ItemStatus.NEW_REACTION)){
+                tryToRemoveItemViews(item,itemTwo);
+                popSound.start();
+            }else{
+                handleItemOnTop(itemTwo,itemTwoX,itemTwoY,false);
+                blopSound.start();
+            }
+        }else{
             handleItemOnTop(itemTwo,itemTwoX,itemTwoY,true);
             errorSound.start();
         }
+
+        saveData();
+
+    }
+
+    private void saveData(){
+        sharedPref.edit().putString(ITEM_ID, viewModel.getSavedItems()).apply();
+        sharedPref.edit().putString(REACTION_ID, viewModel.getSavedReactions()).apply();
+    }
+
+    private void knownItemFromKnownReaction(Item i, float itemX, float itemWidth, float itemY) {
+        final SmallImageView smallview= new SmallImageView(getApplicationContext(),i);
+        smallview.setX(itemX+(itemWidth-SmallImageView.SIZE)/2);
+        smallview.setY(itemY);
+        smallview.setAlpha(0.0f);
+        reactionView.addView(smallview);
+        // Start the animation
+        smallview.animate()
+                .translationY(itemY-SmallImageView.SIZE-20)
+                .alpha(1.0f)
+                .setDuration(1000)
+                .setStartDelay(200)
+                .setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        smallview.animate().alpha(0.0f).setDuration(200).setStartDelay(200).setListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                reactionView.removeView(smallview);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+
+                            }
+                        });
+
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+    }
+
+    private void knownItemFromUnknownReaction(Item i, float itemX, float itemY) {
+        ItemView newView = createItemView(i);
+        newView.setX(itemX - (newView.getWidth() / 2));
+        newView.setY(itemY - (newView.getHeight() / 2));
+        reactionView.addView(newView);
+    }
+
+    private void unknownItem(Item i, float itemX, float itemY) {
+        openNewItemFragment(i,i.getName().toUpperCase());
+        itemLayout.addView(new ListCompleteItemView(this, i.getName(),
+                    new ItemListView(this, i, this)));
+        sortItemLayout();
+
+        ItemView newView = createItemView(i);
+        newView.setX(itemX - (newView.getWidth() / 2));
+        newView.setY(itemY - (newView.getHeight() / 2));
+        reactionView.addView(newView);
+
     }
 
     private void handleItemOnTop(ItemHolder itemTwo, float itemTwoX, float itemTwoY,boolean shake) {
@@ -338,121 +435,6 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
             owner.removeView(itemTwo);
         }
     }
-
-    private void oldReactionPerformed(Set<Item> products, float itemX, float itemWidth, float itemY) {
-        blopSound.start();
-        for(Item i:products){
-            final SmallImageView smallview= new SmallImageView(getApplicationContext(),i);
-            smallview.setX(itemX+(itemWidth-SmallImageView.SIZE)/2);
-            smallview.setY(itemY);
-            smallview.setAlpha(0.0f);
-            reactionView.addView(smallview);
-            // Start the animation
-            smallview.animate()
-                    .translationY(itemY-SmallImageView.SIZE-20)
-                    .alpha(1.0f)
-                    .setDuration(1000)
-                    .setStartDelay(200)
-                    .setListener(new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationStart(Animator animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            smallview.animate().alpha(0.0f).setDuration(200).setStartDelay(200).setListener(new Animator.AnimatorListener() {
-                                @Override
-                                public void onAnimationStart(Animator animation) {
-
-                                }
-
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    reactionView.removeView(smallview);
-                                }
-
-                                @Override
-                                public void onAnimationCancel(Animator animation) {
-
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(Animator animation) {
-
-                                }
-                            });
-
-
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animation) {
-
-                        }
-                    });
-        }
-    }
-
-    private void newReactionDiscovered(Set<Item> items, float itemX, float itemY
-            ,Collection<Item> knownItems) {
-
-        boolean playSuccesSound=false;
-        for(Item i:items){
-            if (!knownItems.contains(i)) {
-                playSuccesSound=true;
-                saveAllData();
-                openNewItemFragment(i,i.getName().toUpperCase());
-                itemLayout.addView(new ListCompleteItemView(this, i.getName(),
-                        new ItemListView(this, i, this)));
-                sortItemLayout();
-            }
-            ItemView newView = createItemView(i);
-            newView.setX(itemX - (newView.getWidth() / 2));
-            newView.setY(itemY - (newView.getHeight() / 2));
-            reactionView.addView(newView);
-        }
-        if (playSuccesSound){
-            succesSound.start();
-        }else{
-            popSound.start();
-        }
-    }
-
-    private void newItemDiscovered(Set<Item> created, ItemHolder item, float itemX, float itemY,
-                                   ItemHolder itemTwo, Collection<Item> knownItems) {
-        if (item.canBeRemoved()) {
-            ViewGroup owner = (ViewGroup) item.getParent();
-            owner.removeView(item);
-        }
-        if (itemTwo.canBeRemoved()) {
-            ViewGroup owner = (ViewGroup) itemTwo.getParent();
-            owner.removeView(itemTwo);
-        }
-        for(Item i:created){
-            if (!knownItems.contains(i)) {
-
-                saveAllData();
-                openNewItemFragment(i,i.getName().toUpperCase());
-                itemLayout.addView(new ListCompleteItemView(this, i.getName(),
-                        new ItemListView(this, i, this)));
-                sortItemLayout();
-            }
-            ItemView newView = createItemView(i);
-            newView.setX(itemX - (newView.getWidth() / 2));
-            newView.setY(itemY - (newView.getHeight() / 2));
-            reactionView.addView(newView);
-        }
-
-
-
-    }
-
 
     //----------------------Drag Listeners------------------------------------------
 
@@ -534,10 +516,11 @@ public class AlchemistActivity extends AppCompatActivity implements IItemParentC
 
     @Override
     public void resetGame() {
-        facade.resetGame();
+        viewModel.resetGame();
         itemLayout.removeAllViews();
         initItemLayout();
         reactionView.removeAllViews();
+        saveData();
     }
 
 
